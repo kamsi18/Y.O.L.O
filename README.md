@@ -15,8 +15,10 @@ Player profiles with match history
 Leaderboards
 Controls
 Key	Action
-(<>)	Move
-(spacebar)	Shoot
+<>	Move
+spacebar	Shoot
+mouse cursor  aim
+
 
 # then visit file:///C:/Users/USER/.antigravity/public/index.html
 
