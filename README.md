@@ -17,16 +17,8 @@ Controls
 Key	Action
 (<>)	Move
 (spacebar)	Shoot
-Getting started
 
-Online play needs a Node.js server, because the page loads the Socket.IO client from /socket.io/socket.io.js. A plain static server will show the interface, but lobbies, chat and leaderboards will not connect.
-
-bash
-npm install
-node server.js
 # then visit file:///C:/Users/USER/.antigravity/public/index.html
-
-Replace the commands above with your actual server file and port.
 
 Project structure
 index.html   # menus, lobby, HUD and game canvas
@@ -40,6 +32,4 @@ Node.js backend
 Customising
 Menus and layout: edit index.html and the stylesheet.
 Bot difficulty, power-ups and game rules: edit the scripts in js/.
-Notes
-This README was written from index.html only. The scripts and server were not available, so the controls, file list and run commands above should be checked and completed.
-Match history and leaderboards need the backend to be deployed and reachable.
+
