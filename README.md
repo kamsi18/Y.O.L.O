@@ -10,11 +10,7 @@ The server is already installed and running on your machine:
 - Open your browser at: **[http://localhost:3050](http://localhost:3050)**
 
 ### To Run / Restart Anytime:
-```powershell
-# In c:\Users\USER\.antigravity
-npm start
-```
-Or:
+
 ```powershell
 node server/index.js
 ```
