@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Y.O.L.O - You Only Live Once | Tactical Online Shooter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="cyber-theme">
+
+  <!-- Internet Connection Status Bar (Requirement 3) -->
+  <div id="connection-bar" class="connection-status online">
+    <div class="status-indicator">
+      <span class="status-dot"></span>
+      <span id="connection-text">ONLINE // QUANTUM NETWORK CONNECTED</span>
+    </div>
+    <div id="connection-ping" class="ping-pill">PING: 24ms</div>
+  </div>
+
+  <!-- Mandatory Internet Disconnected Modal Overlay -->
+  <div id="offline-blocker" class="offline-overlay hidden">
+    <div class="offline-card cyber-panel">
+      <div class="offline-icon">⚠️</div>
+      <h2 class="neon-red">INTERNET CONNECTION REQUIRED</h2>
+      <p class="offline-desc">
+        Y.O.L.O is an online combat network. An active internet connection is required to authenticate combat profiles, synchronize real-time match history, and connect to multiplayer battlefields.
+      </p>
+      <div class="offline-pulse">
+        <div class="radar-scan"></div>
+        <span id="offline-reconnect-msg">AWAITING NETWORK RECONNECT...</span>
+      </div>
+      <div class="offline-actions-row">
+        <button id="btn-retry-connection" class="cyber-btn primary-glow">RETRY CONNECTION</button>
+        <button id="btn-bypass-offline" class="cyber-btn alt sm">DISMISS / PLAY ANYWAY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Time Slow Visual Distortion Matrix Overlay -->
+  <div id="chrono-warp-overlay" class="chrono-fx hidden">
+    <div class="warp-vignette"></div>
+    <div class="warp-label">
+      <span class="warp-spinner">⏳</span>
+      <span id="chrono-warp-text">TEMPORAL WARP ACTIVE // ENEMY TIME SLOWED (7.0s)</span>
+    </div>
+  </div>
+
+  <!-- MAIN MENU SCREEN -->
+  <section id="menu-screen" class="view-screen active">
+    <div class="menu-background">
+      <div class="cyber-grid"></div>
+      <div class="particles-bg"></div>
+    </div>
+
+    <header class="menu-header">
+      <div class="logo-box">
+        <h1 class="game-logo glitch" data-text="Y.O.L.O">Y.O.L.O</h1>
+        <div class="logo-subtitle">YOU ONLY LIVE ONCE</div>
+        <div class="tactical-badge">TACTICAL CYBERNETIC ARENA</div>
+      </div>
+
+      <div class="profile-preview-card" id="btn-open-my-profile" title="Click to view full Career Dossier">
+        <div class="user-avatar-badge" id="preview-avatar">⚡</div>
+        <div class="user-info">
+          <div class="username-row">
+            <span id="preview-username">Operative</span>
+            <span class="badge-lvl">RANK 1</span>
+          </div>
+          <div class="user-stats-mini">
+            <span id="preview-wins">0 W</span> • <span id="preview-kd">0.00 K/D</span> • <span id="preview-streak" class="streak-pill">🔥 0 STREAK</span>
+          </div>
+        </div>
+        <div class="card-arrow">▶</div>
+      </div>
+    </header>
+
+    <main class="menu-main">
+      <div class="mode-select-grid">
+
+        <!-- SOLO VS COMPUTER -->
+        <div class="mode-card cyber-panel" id="card-vs-bot">
+          <div class="mode-badge">OFFLINE / PRACTICE</div>
+          <div class="mode-icon">🤖</div>
+          <h3>VERSUS COMPUTER</h3>
+          <p>Sharpen your tactical instincts against adaptive AI combat droids.</p>
+
+          <div class="sub-mode-controls">
+            <label class="control-label">SELECT BATTLE FORMAT:</label>
+            <div class="segmented-control">
+              <button class="seg-btn active" data-bot-mode="1v1">1v1 DUEL</button>
+              <button class="seg-btn" data-bot-mode="survival">10-PLAYER SURVIVAL</button>
+            </div>
+
+            <label class="control-label mt-2">AI COMBAT DIFFICULTY:</label>
+            <select id="bot-difficulty-select" class="cyber-select">
+              <option value="recruit">Recruit (Target Practice)</option>
+              <option value="veteran" selected>Veteran (Tactical Cover & Flank)</option>
+              <option value="cybergod">Cyber-God (Aggressive & Sniping)</option>
+            </select>
+          </div>
+
+          <button id="btn-start-bot-game" class="cyber-btn primary-glow">ENTER BOT ARENA</button>
+        </div>
+
+        <!-- ONLINE MULTIPLAYER -->
+        <div class="mode-card cyber-panel highlighted" id="card-vs-player">
+          <div class="mode-badge live-badge">ONLINE NETWORK</div>
+          <div class="mode-icon">⚔️</div>
+          <h3>VERSUS PLAYERS</h3>
+          <p>Real-time online combat against human players with full career showcase.</p>
+
+          <div class="sub-mode-controls">
+            <label class="control-label">MATCHMAKING FORMAT:</label>
+            <div class="segmented-control">
+              <button class="seg-btn active" data-online-mode="1v1">1v1 DUEL</button>
+              <button class="seg-btn" data-online-mode="survival">10-PLAYER FFA ROOM</button>
+            </div>
+
+            <div class="room-action-tabs">
+              <button class="tab-btn active" id="tab-quick-play">QUICK MATCH</button>
+              <button class="tab-btn" id="tab-custom-room">ROOM CODE / BROWSE</button>
+            </div>
+
+            <div id="custom-room-section" class="custom-room-box hidden">
+              <input type="text" id="input-room-code" placeholder="ENTER 4-DIGIT ROOM CODE" maxlength="8" class="cyber-input">
+              <div class="room-btn-pair">
+                <button id="btn-create-room" class="cyber-btn sm">CREATE ROOM</button>
+                <button id="btn-join-room" class="cyber-btn sm primary-glow">JOIN ROOM</button>
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-quick-play" class="cyber-btn neon-glow">FIND MATCH NOW</button>
+        </div>
+
+      </div>
+
+      <!-- Live Room Browser & Quick Leaderboard Bar -->
+      <div class="menu-bottom-row">
+        <div class="bottom-action-buttons">
+          <button id="btn-open-history" class="cyber-btn alt">
+            <span class="btn-icon">📜</span> MATCH HISTORY & DOSSIER
+          </button>
+          <button id="btn-open-leaderboard" class="cyber-btn alt">
+            <span class="btn-icon">🏆</span> GLOBAL LEADERBOARDS
+          </button>
+          <button id="btn-open-customizer" class="cyber-btn alt">
+            <span class="btn-icon">⚙️</span> ARMORY & LOADOUT
+          </button>
+          <button id="btn-toggle-sound" class="cyber-btn alt">
+            <span class="btn-icon">🔊</span> AUDIO: ON
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="menu-footer">
+      <span>Y.O.L.O v1.0 • HIGH TACTICAL SHOOTER • CLONE • 2X SHIELD • TIME SLOW • POWER-UPS</span>
+    </footer>
+  </section>
+
+  <!-- LOBBY / PRE-MATCH SCREEN -->
+  <section id="lobby-screen" class="view-screen hidden">
+    <div class="lobby-container cyber-panel">
+      <div class="lobby-header">
+        <div class="lobby-info">
+          <h2 id="lobby-room-title">ARENA LOBBY: ROOM-XXXX</h2>
+          <span id="lobby-mode-tag" class="mode-tag">1v1 DUEL</span>
+        </div>
+        <div class="lobby-actions">
+          <button id="btn-copy-room-code" class="cyber-btn sm">COPY CODE</button>
+          <button id="btn-leave-lobby" class="cyber-btn sm red-glow">LEAVE</button>
+        </div>
+      </div>
+
+      <div class="lobby-main-grid">
+        <!-- Player Roster -->
+        <div class="roster-panel">
+          <div class="panel-title-bar">
+            <span>COMBATANTS (<span id="lobby-count">1</span>/<span id="lobby-max">2</span>)</span>
+            <span class="sub-hint">Click any combatant to inspect their Career History</span>
+          </div>
+          <div id="lobby-players-list" class="roster-list">
+            <!-- Dynamically populated combatant cards -->
+          </div>
+
+          <div class="host-controls" id="host-controls">
+            <button id="btn-add-bot" class="cyber-btn sm alt">+ FILL WITH AI BOT</button>
+            <button id="btn-start-lobby-match" class="cyber-btn primary-glow">START COMBAT</button>
+          </div>
+        </div>
+
+        <!-- Tactical Chat & Ready Status -->
+        <div class="chat-panel">
+          <div class="panel-title-bar">TACTICAL COMM CHANNEL</div>
+          <div id="lobby-chat-log" class="chat-log"></div>
+          <div class="chat-input-bar">
+            <input type="text" id="input-chat-msg" placeholder="Send comm message..." maxlength="80" class="cyber-input">
+            <button id="btn-send-chat" class="cyber-btn sm">SEND</button>
+          </div>
+          <div class="quick-taunts">
+            <button class="taunt-chip" data-taunt="Y.O.L.O!">"Y.O.L.O!"</button>
+            <button class="taunt-chip" data-taunt="Ready up!">"Ready up!"</button>
+            <button class="taunt-chip" data-taunt="Let's dance.">"Let's dance."</button>
+            <button class="taunt-chip" data-taunt="Watch out for clones!">"Watch clones!"</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME ARENA SCREEN -->
+  <section id="game-screen" class="view-screen hidden">
+    <!-- Main Top HUD (Requirements 1 & 6) -->
+    <header id="game-top-hud" class="hud-header">
+      <!-- Local Player Card -->
+      <div class="hud-combatant-card player-hud" id="my-hud-card">
+        <div class="avatar-box" id="hud-my-avatar">⚡</div>
+        <div class="bars-container">
+          <div class="name-row">
+            <span id="hud-my-name" class="combatant-name">YOU</span>
+            <div class="buff-indicators" id="hud-my-buffs">
+              <!-- Active Power-up badges -->
+            </div>
+          </div>
+          <!-- Overhead Shield Bar -->
+          <div class="shield-bar-frame">
+            <div id="hud-my-shield-fill" class="shield-fill" style="width: 100%;"></div>
+            <span id="hud-my-shield-text" class="bar-num">100 SHIELD</span>
+          </div>
+          <!-- Overhead Health Bar -->
+          <div class="hp-bar-frame">
+            <div id="hud-my-hp-fill" class="hp-fill" style="width: 100%;"></div>
+            <span id="hud-my-hp-text" class="bar-num">100 HP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match Status Center -->
+      <div class="hud-center-pill">
+        <div class="hud-match-title" id="hud-match-mode">1v1 DUEL</div>
+        <div class="hud-timer" id="hud-timer">00:00</div>
+        <div class="hud-survivor-count" id="hud-survivor-badge">
+          SURVIVORS: <span id="hud-survivor-num">2/2</span>
+        </div>
+        <div id="hud-storm-alert" class="storm-alert hidden">⚠️ DANGER ZONE CONTRACTING</div>
+      </div>
+
+      <!-- Opponent Card (Requirement 1: Health bar of opponent available) -->
+      <div class="hud-combatant-card opponent-hud" id="rival-hud-card">
+        <div class="bars-container align-right">
+          <div class="name-row justify-end">
+            <div class="buff-indicators" id="hud-rival-buffs"></div>
+            <span id="hud-rival-name" class="combatant-name">OPPONENT</span>
+            <button id="btn-inspect-rival-hud" class="inspect-btn-mini" title="Inspect Opponent Match History">📋 DOSSIER</button>
+          </div>
+          <div class="shield-bar-frame">
+            <div id="hud-rival-shield-fill" class="shield-fill rival-shield" style="width: 100%;"></div>
+            <span id="hud-rival-shield-text" class="bar-num">100 SHIELD</span>
+          </div>
+          <div class="hp-bar-frame">
+            <div id="hud-rival-hp-fill" class="hp-fill rival-hp" style="width: 100%;"></div>
+            <span id="hud-rival-hp-text" class="bar-num">100 HP</span>
+          </div>
+        </div>
+        <div class="avatar-box rival-avatar" id="hud-rival-avatar">💀</div>
+      </div>
+    </header>
+
+    <!-- Side Survivor Roster (for 10-Player Survival Mode) -->
+    <div id="survival-roster" class="survival-roster hidden">
+      <div class="roster-title">SURVIVORS (10)</div>
+      <div id="roster-entries" class="roster-entries"></div>
+    </div>
+
+    <!-- Canvas Viewport -->
+    <div id="canvas-container" class="canvas-wrapper">
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <!-- Tactical Radar / Minimap -->
+    <div class="minimap-frame">
+      <canvas id="minimap-canvas" width="160" height="160"></canvas>
+      <div class="minimap-label">ARENA RADAR</div>
+    </div>
+
+    <!-- Power-Up Active Status Tray -->
+    <div class="powerup-tray" id="powerup-tray">
+      <!-- Active buffs with timer dials -->
+    </div>
+
+    <!-- Controls & Keybinds Legend Overlay -->
+    <div class="controls-legend">
+      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span>
+      <span><kbd>MOUSE</kbd> Aim & Shoot</span>
+      <span><kbd>TAB</kbd> Opponent History</span>
+      <span><kbd>T</kbd> Chat</span>
+      <span><kbd>M</kbd> Audio</span>
+    </div>
+  </section>
+
+  <!-- MATCH RESULTS / GAME OVER SCREEN -->
+  <div id="result-modal" class="modal-backdrop hidden">
+    <div class="result-card cyber-panel">
+      <div class="result-header">
+        <h2 id="result-title" class="neon-cyan">VICTORY // LAST OPERATIVE STANDING</h2>
+        <div id="result-placement" class="placement-badge">#1 SURVIVOR</div>
+      </div>
+
+      <!-- Head to Head Comparison Card (Requirement 2) -->
+      <div class="h2h-comparison-card">
+        <div class="h2h-col user-h2h">
+          <div class="h2h-avatar" id="res-my-avatar">⚡</div>
+          <h4 id="res-my-name">YOU</h4>
+          <div class="h2h-stat" id="res-my-kills">KILLS: 0</div>
+          <div class="h2h-stat" id="res-my-damage">DAMAGE: 0</div>
+        </div>
+        <div class="h2h-center">
+          <div class="vs-circle">VS</div>
+          <div class="match-time-badge" id="res-duration">01:45</div>
+        </div>
+        <div class="h2h-col rival-h2h">
+          <div class="h2h-avatar" id="res-rival-avatar">💀</div>
+          <h4 id="res-rival-name">OPPONENT</h4>
+          <div class="h2h-stat" id="res-rival-kills">KILLS: 0</div>
+          <div class="h2h-stat" id="res-rival-damage">DAMAGE: 0</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="result-actions">
+        <button id="btn-inspect-rival-result" class="cyber-btn primary-glow">
+          📋 INSPECT OPPONENT MATCH HISTORY
+        </button>
+        <button id="btn-play-again" class="cyber-btn neon-glow">
+          PLAY AGAIN
+        </button>
+        <button id="btn-return-menu" class="cyber-btn alt">
+          MAIN MENU
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYER / OPPONENT DOSSIER & MATCH HISTORY MODAL (Requirement 2 & 7) -->
+  <div id="dossier-modal" class="modal-backdrop hidden">
+    <div class="dossier-card cyber-panel">
+      <div class="modal-header-bar">
+        <div class="dossier-title-group">
+          <span class="dossier-type-tag" id="dossier-tag">COMBATANT DOSSIER</span>
+          <h2 id="dossier-username">OPERATIVE RECORD</h2>
+        </div>
+        <button id="btn-close-dossier" class="close-x-btn">✕</button>
+      </div>
+
+      <div class="dossier-body">
+        <!-- Overview Stats Grid -->
+        <div class="dossier-stats-grid">
+          <div class="stat-tile">
+            <span class="stat-label">WIN RATE</span>
+            <span class="stat-value neon-cyan" id="dossier-winrate">0%</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">TOTAL MATCHES</span>
+            <span class="stat-value" id="dossier-matches">0</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">WINS / LOSSES</span>
+            <span class="stat-value"><span id="dossier-wins" class="neon-green">0</span> / <span id="dossier-losses" class="neon-red">0</span></span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">K/D RATIO</span>
+            <span class="stat-value neon-gold" id="dossier-kd">0.00</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">TOTAL KILLS</span>
+            <span class="stat-value" id="dossier-kills">0</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">DAMAGE DEALT</span>
+            <span class="stat-value" id="dossier-damage">0</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">WIN STREAK</span>
+            <span class="stat-value neon-purple" id="dossier-streak">0 🔥</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">BEST STREAK</span>
+            <span class="stat-value" id="dossier-best-streak">0 🔥</span>
+          </div>
+        </div>
+
+        <!-- Chronological Match History Showcase -->
+        <div class="dossier-history-section">
+          <div class="section-heading">
+            <span>CHRONOLOGICAL MATCH HISTORY</span>
+            <span class="history-count-badge" id="history-count">0 RECORDED</span>
+          </div>
+          <div class="history-table-wrapper">
+            <table class="cyber-table">
+              <thead>
+                <tr>
+                  <th>DATE</th>
+                  <th>FORMAT</th>
+                  <th>RESULT</th>
+                  <th>KILLS</th>
+                  <th>DAMAGE</th>
+                  <th>OPPONENTS FACED</th>
+                </tr>
+              </thead>
+              <tbody id="dossier-history-tbody">
+                <!-- Dynamically populated match history rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOBAL LEADERBOARDS MODAL -->
+  <div id="leaderboard-modal" class="modal-backdrop hidden">
+    <div class="leaderboard-card cyber-panel">
+      <div class="modal-header-bar">
+        <h2>GLOBAL COMBAT LEADERBOARDS</h2>
+        <button id="btn-close-leaderboard" class="close-x-btn">✕</button>
+      </div>
+      <div class="leaderboard-body">
+        <table class="cyber-table">
+          <thead>
+            <tr>
+              <th>RANK</th>
+              <th>OPERATIVE</th>
+              <th>WINS</th>
+              <th>WIN RATE</th>
+              <th>K/D</th>
+              <th>KILLS</th>
+              <th>STREAK</th>
+              <th>PROFILE</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADOUT & SETTINGS MODAL -->
+  <div id="loadout-modal" class="modal-backdrop hidden">
+    <div class="loadout-card cyber-panel">
+      <div class="modal-header-bar">
+        <h2>TACTICAL ARMORY & LOADOUT</h2>
+        <button id="btn-close-loadout" class="close-x-btn">✕</button>
+      </div>
+      <div class="loadout-body">
+        <div class="input-field-group">
+          <label>OPERATIVE CALLSIGN (USERNAME):</label>
+          <input type="text" id="setting-username" maxlength="16" class="cyber-input" value="Operative">
+        </div>
+
+        <div class="input-field-group">
+          <label>AVATAR EMBLEM:</label>
+          <div class="avatar-selector-grid">
+            <button class="avatar-option active" data-avatar="⚡">⚡</button>
+            <button class="avatar-option" data-avatar="💀">💀</button>
+            <button class="avatar-option" data-avatar="🎯">🎯</button>
+            <button class="avatar-option" data-avatar="🐺">🐺</button>
+            <button class="avatar-option" data-avatar="🐉">🐉</button>
+            <button class="avatar-option" data-avatar="🤖">🤖</button>
+            <button class="avatar-option" data-avatar="🔥">🔥</button>
+            <button class="avatar-option" data-avatar="👁️">👁️</button>
+          </div>
+        </div>
+
+        <div class="input-field-group">
+          <label>NEON ENERGY COLOR:</label>
+          <div class="color-selector-grid">
+            <button class="color-option active" data-color="#00f3ff" style="background: #00f3ff;"></button>
+            <button class="color-option" data-color="#ff0055" style="background: #ff0055;"></button>
+            <button class="color-option" data-color="#00ff88" style="background: #00ff88;"></button>
+            <button class="color-option" data-color="#ffb703" style="background: #ffb703;"></button>
+            <button class="color-option" data-color="#9d4edd" style="background: #9d4edd;"></button>
+            <button class="color-option" data-color="#ffffff" style="background: #ffffff;"></button>
+          </div>
+        </div>
+
+        <button id="btn-save-loadout" class="cyber-btn primary-glow">SAVE PROFILE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/obstacles.js"></script>
+  <script src="js/powerups.js"></script>
+  <script src="js/bot.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
