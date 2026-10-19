@@ -1,0 +1,14 @@
+{
+  "name": "yolo-shooting-game",
+  "version": "1.0.0",
+  "description": "Y.O.L.O (You Only Live Once) - Online Sci-Fi Tactical Top-Down Shooter",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
